@@ -1,6 +1,4 @@
-
 import streamlit as st
-import cv2
 import numpy as np
 from PIL import Image
 import tempfile
@@ -11,6 +9,14 @@ import base64
 import time
 from ultralytics import YOLO
 
+# ==== Lazy-load OpenCV ====
+@st.cache_resource
+def load_cv2():
+    import cv2
+    return cv2
+
+cv2 = load_cv2()
+
 # ==== Config ====
 st.set_page_config(page_title="AgriVision 🌿", layout="centered", initial_sidebar_state="expanded")
 
@@ -18,7 +24,7 @@ def get_base64_image(path):
     with open(path, "rb") as f:
         return base64.b64encode(f.read()).decode()
 
-bg_image_path = "crop-weed-detection-using-yolov11-efficientnet/Agrivision_Streamlit/assets/bg.png"
+bg_image_path = "Agrivision_Streamlit/assets/bg.png"
 bg_base64 = get_base64_image(bg_image_path)
 
 st.markdown(f"""
@@ -55,11 +61,11 @@ conf_threshold = st.sidebar.slider("🎯 Confidence Threshold", 0.0, 1.0, 0.25, 
 # ==== Load Models ====
 @st.cache_resource
 def load_yolov11():
-    return YOLO("/Users/tushar/Downloads/crop_weed_detector_streamlit/stream/yolov11n.pt")
+    return YOLO("Agrivision_Streamlit/app/yolov11n.pt")
 
 @st.cache_resource
 def load_hybrid_model():
-    return YOLO("/Users/tushar/Downloads/crop_weed_detector_streamlit/stream/yolov11_efficientnet.pt")
+    return YOLO("Agrivision_Streamlit/app/yolov11_efficientnet.pt")
 
 model_yolo = load_yolov11()
 model_hybrid = load_hybrid_model()
@@ -118,7 +124,6 @@ def show_pie_chart(crops, weeds, chart_key):
     st.plotly_chart(fig, use_container_width=True, key=chart_key)
 
 # ==== Main UI ====
-#st.markdown('<div class="main-box">', unsafe_allow_html=True)
 st.markdown("<h1>🌿 AgriVision – Smart Crop & Weed Detection</h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align:center; font-size:18px;'>Dual Model | Image, Camera & Video Support</p>", unsafe_allow_html=True)
 
@@ -214,6 +219,6 @@ elif input_type == "Camera":
                 st.info(f"⏱️ Detection Time: {elapsed:.2f} seconds")
                 show_pie_chart(crops, weeds, chart_key="camera_chart")
 
-# Video handling can be added similarly if needed
-st.markdown('</div>', unsafe_allow_html=True)
 
+# Video support could be added here in future
+st.markdown('</div>', unsafe_allow_html=True)
