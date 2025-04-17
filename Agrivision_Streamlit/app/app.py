@@ -18,7 +18,7 @@ def get_base64_image(path):
     with open(path, "rb") as f:
         return base64.b64encode(f.read()).decode()
 
-bg_image_path = "/Users/tushar/Downloads/crop_weed_detector_streamlit/bg.png"
+bg_image_path = "crop-weed-detection-using-yolov11-efficientnet/Agrivision_Streamlit/assets/bg.png"
 bg_base64 = get_base64_image(bg_image_path)
 
 st.markdown(f"""
