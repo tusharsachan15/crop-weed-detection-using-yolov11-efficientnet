@@ -2,9 +2,9 @@
 streamlit>=1.25.0
 
 # Torch with CUDA 12.4
-torch==2.2.2+cu124
-torchvision==0.17.2+cu124
-torchaudio==2.2.2+cu124
+#torch==2.2.2+cu124
+#torchvision==0.17.2+cu124
+#torchaudio==2.2.2+cu124
 # For torch with CUDA 12.4, use pip from PyTorch channel:
 # pip install torch==2.2.2+cu124 torchvision==0.17.2+cu124 torchaudio==2.2.2+cu124 -f https://download.pytorch.org/whl/torch_stable.html
 
