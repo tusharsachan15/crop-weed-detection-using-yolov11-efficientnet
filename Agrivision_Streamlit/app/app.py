@@ -6,12 +6,12 @@ st.set_page_config(page_title="AgriVision 🌿", layout="centered", initial_side
 import numpy as np
 import cv2
 from PIL import Image
-import tempfile
 import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 import base64
 import time
+import os
 from ultralytics import YOLO
 
 # ==== Background Image ====
@@ -56,11 +56,19 @@ conf_threshold = st.sidebar.slider("🎯 Confidence Threshold", 0.0, 1.0, 0.25, 
 # ==== Load Models ====
 @st.cache_resource
 def load_yolov11():
-    return YOLO("Agrivision_Streamlit/app/yolov11_nano.pt")
+    path = "Agrivision_Streamlit/app/yolov11n.pt"
+    if not os.path.exists(path):
+        st.error(f"🚫 YOLOv11 model not found at: {path}")
+        st.stop()
+    return YOLO(path)
 
 @st.cache_resource
 def load_hybrid_model():
-    return YOLO("Agrivision_Streamlit/app/yolov11_efficientnet.pt")
+    path = "Agrivision_Streamlit/app/yolov11_efficientnet.pt"
+    if not os.path.exists(path):
+        st.error(f"🚫 Hybrid model not found at: {path}")
+        st.stop()
+    return YOLO(path)
 
 model_yolo = load_yolov11()
 model_hybrid = load_hybrid_model()
@@ -100,6 +108,7 @@ def run_and_draw(image_bgr, model):
 
     return output, crop_count, weed_count, elapsed
 
+# ==== Pie Chart ====
 def show_pie_chart(crops, weeds, chart_key):
     fig = go.Figure(data=[go.Pie(
         labels=["Crops", "Weeds"],
