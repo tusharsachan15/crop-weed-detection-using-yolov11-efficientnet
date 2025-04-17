@@ -1,1 +1,0 @@
-# crop-weed-detection-using-yolov11-efficientnet
