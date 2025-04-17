@@ -1,5 +1,10 @@
+# ==== Streamlit Page Config MUST come first ====
 import streamlit as st
+st.set_page_config(page_title="AgriVision 🌿", layout="centered", initial_sidebar_state="expanded")
+
+# ==== Imports ====
 import numpy as np
+import cv2
 from PIL import Image
 import tempfile
 import plotly.express as px
@@ -9,17 +14,7 @@ import base64
 import time
 from ultralytics import YOLO
 
-# ==== Lazy-load OpenCV ====
-@st.cache_resource
-def load_cv2():
-    import cv2
-    return cv2
-
-cv2 = load_cv2()
-
-# ==== Config ====
-st.set_page_config(page_title="AgriVision 🌿", layout="centered", initial_sidebar_state="expanded")
-
+# ==== Background Image ====
 def get_base64_image(path):
     with open(path, "rb") as f:
         return base64.b64encode(f.read()).decode()
@@ -61,7 +56,7 @@ conf_threshold = st.sidebar.slider("🎯 Confidence Threshold", 0.0, 1.0, 0.25, 
 # ==== Load Models ====
 @st.cache_resource
 def load_yolov11():
-    return YOLO("Agrivision_Streamlit/app/yolov11n.pt")
+    return YOLO("Agrivision_Streamlit/app/yolov11_nano.pt")
 
 @st.cache_resource
 def load_hybrid_model():
@@ -73,7 +68,7 @@ model_hybrid = load_hybrid_model()
 CLASS_NAMES = ["crop", "weed"]
 COLORS = [(255, 0, 0), (0, 255, 255)]
 
-# ==== Detection Function ====
+# ==== Detection Logic ====
 def run_and_draw(image_bgr, model):
     start = time.time()
     results = model.predict(source=image_bgr, conf=conf_threshold, verbose=False)
@@ -105,7 +100,6 @@ def run_and_draw(image_bgr, model):
 
     return output, crop_count, weed_count, elapsed
 
-# ==== Pie Chart ====
 def show_pie_chart(crops, weeds, chart_key):
     fig = go.Figure(data=[go.Pie(
         labels=["Crops", "Weeds"],
@@ -123,11 +117,11 @@ def show_pie_chart(crops, weeds, chart_key):
     )
     st.plotly_chart(fig, use_container_width=True, key=chart_key)
 
-# ==== Main UI ====
+# ==== UI ====
 st.markdown("<h1>🌿 AgriVision – Smart Crop & Weed Detection</h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align:center; font-size:18px;'>Dual Model | Image, Camera & Video Support</p>", unsafe_allow_html=True)
 
-input_type = st.radio("📁 Choose Input Type", ["Image", "Camera", "Video"])
+input_type = st.radio("📁 Choose Input Type", ["Image", "Camera"])
 
 if input_type == "Image":
     image_files = st.file_uploader("📤 Upload Image(s)", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
@@ -186,39 +180,11 @@ elif input_type == "Camera":
             image_bgr = cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
             st.image(image, caption="📷 Captured Image", use_column_width=True)
 
-            if model_choice == "Compare Both":
-                col1, col2 = st.columns(2)
-                with col1:
-                    result_img1, crops1, weeds1, time1 = run_and_draw(image_bgr, model_yolo)
-                    st.image(cv2.cvtColor(result_img1, cv2.COLOR_BGR2RGB), caption="YOLOv11", use_column_width=True)
-                    st.metric("🌿 Crops", crops1)
-                    st.metric("🌾 Weeds", weeds1)
-                    st.info(f"⏱️ Time: {time1:.2f}s")
-
-                with col2:
-                    result_img2, crops2, weeds2, time2 = run_and_draw(image_bgr, model_hybrid)
-                    st.image(cv2.cvtColor(result_img2, cv2.COLOR_BGR2RGB), caption="Hybrid", use_column_width=True)
-                    st.metric("🌿 Crops", crops2)
-                    st.metric("🌾 Weeds", weeds2)
-                    st.info(f"⏱️ Time: {time2:.2f}s")
-
-                st.dataframe(pd.DataFrame({
-                    "Model": ["YOLOv11", "Hybrid"],
-                    "Crops": [crops1, crops2],
-                    "Weeds": [weeds1, weeds2],
-                    "Time": [time1, time2]
-                }), use_container_width=True)
-
-            else:
-                model = model_yolo if model_choice == "YOLOv11" else model_hybrid
-                result_img, crops, weeds, elapsed = run_and_draw(image_bgr, model)
-                result_rgb = cv2.cvtColor(result_img, cv2.COLOR_BGR2RGB)
-                st.image(result_rgb, caption="🧠 Detected Image", use_column_width=True)
-                st.metric("🌿 Crops", crops)
-                st.metric("🌾 Weeds", weeds)
-                st.info(f"⏱️ Detection Time: {elapsed:.2f} seconds")
-                show_pie_chart(crops, weeds, chart_key="camera_chart")
-
-
-# Video support could be added here in future
-st.markdown('</div>', unsafe_allow_html=True)
+            model = model_yolo if model_choice == "YOLOv11" else model_hybrid
+            result_img, crops, weeds, elapsed = run_and_draw(image_bgr, model)
+            result_rgb = cv2.cvtColor(result_img, cv2.COLOR_BGR2RGB)
+            st.image(result_rgb, caption="🧠 Detected Image", use_column_width=True)
+            st.metric("🌿 Crops", crops)
+            st.metric("🌾 Weeds", weeds)
+            st.info(f"⏱️ Detection Time: {elapsed:.2f} seconds")
+            show_pie_chart(crops, weeds, chart_key="camera_chart")
