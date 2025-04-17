@@ -2,7 +2,7 @@
 
 This project utilizes a hybrid deep learning model that combines YOLOv11 for object detection with an EfficientNet backbone for classification. It enables real-time crop and weed detection, aiming to support precision agriculture through intelligent field monitoring.
 
-🌿 Try the live demo here: [Agrivision Streamlit Web App](https://crop-weed-detection-using-yolov11-efficientnet.streamlit.app/)
+🌿 Try the live demo here: [Agrivision Streamlit Web App](https://agrivision-crop-weed-detection.streamlit.app/)
 
 ---
 
