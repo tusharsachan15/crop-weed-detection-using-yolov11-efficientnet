@@ -28,6 +28,7 @@ st.markdown(f"""
         background: url("data:image/png;base64,{bg_base64}") no-repeat center center fixed;
         background-size: cover;
     }}
+
     .main-box {{
         background-color: rgba(0, 0, 0, 0.4);
         padding: 2rem;
@@ -36,13 +37,15 @@ st.markdown(f"""
         max-width: 960px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
     }}
-    h1 {{
-        text-align: center;
-        font-size: 3rem;
-        color: #4CAF50;
-        font-weight: 900;
-    }}
-    h2, p, label, .stRadio > div, .stSlider, .stSelectbox, .stMetric {{
+
+    .main-box h1,
+    .main-box h2,
+    .main-box p,
+    .main-box label,
+    .main-box .stRadio > div,
+    .main-box .stSlider,
+    .main-box .stSelectbox,
+    .main-box .stMetric {{
         color: #ffffff !important;
     }}
     </style>
@@ -126,104 +129,108 @@ def show_pie_chart(crops, weeds, chart_key):
     )
     st.plotly_chart(fig, use_container_width=True, key=chart_key)
 
-# ==== UI ====
-st.markdown("<h1>🌿 AgriVision – Smart Crop & Weed Detection</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; font-size:18px;'>Dual Model | Image, Camera & Video Support</p>", unsafe_allow_html=True)
+# ==== UI Wrapper ====
+with st.container():
+    st.markdown('<div class="main-box">', unsafe_allow_html=True)
 
-input_type = st.radio("📁 Choose Input Type", ["Image", "Camera"])
+    st.markdown("<h1>🌿 AgriVision – Smart Crop & Weed Detection</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; font-size:18px;'>Dual Model | Image, Camera & Video Support</p>", unsafe_allow_html=True)
 
-if input_type == "Image":
-    image_files = st.file_uploader("📤 Upload Image(s)", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
-    if image_files:
-        for i, img_file in enumerate(image_files):
-            st.subheader(f"🖼️ Image {i+1}")
-            image = Image.open(img_file).convert("RGB")
-            image_np = np.array(image)
-            image_bgr = cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
-            st.image(image, caption="📷 Original Image", use_column_width=True)
+    input_type = st.radio("📁 Choose Input Type", ["Image", "Camera"])
 
-            if model_choice == "Compare Both":
-                col1, col2 = st.columns(2)
-                with col1:
-                    result_img1, crops1, weeds1, time1 = run_and_draw(image_bgr, model_yolo)
-                    st.image(cv2.cvtColor(result_img1, cv2.COLOR_BGR2RGB), caption="YOLOv11", use_column_width=True)
-                    st.metric("🌿 Crops", crops1)
-                    st.metric("🌾 Weeds", weeds1)
-                    st.info(f"⏱️ Time: {time1:.2f}s")
+    if input_type == "Image":
+        image_files = st.file_uploader("📤 Upload Image(s)", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
+        if image_files:
+            for i, img_file in enumerate(image_files):
+                st.subheader(f"🖼️ Image {i+1}")
+                image = Image.open(img_file).convert("RGB")
+                image_np = np.array(image)
+                image_bgr = cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
+                st.image(image, caption="📷 Original Image", use_column_width=True)
 
-                with col2:
-                    result_img2, crops2, weeds2, time2 = run_and_draw(image_bgr, model_hybrid)
-                    st.image(cv2.cvtColor(result_img2, cv2.COLOR_BGR2RGB), caption="Hybrid Model", use_column_width=True)
-                    st.metric("🌿 Crops", crops2)
-                    st.metric("🌾 Weeds", weeds2)
-                    st.info(f"⏱️ Time: {time2:.2f}s")
+                if model_choice == "Compare Both":
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        result_img1, crops1, weeds1, time1 = run_and_draw(image_bgr, model_yolo)
+                        st.image(cv2.cvtColor(result_img1, cv2.COLOR_BGR2RGB), caption="YOLOv11", use_column_width=True)
+                        st.metric("🌿 Crops", crops1)
+                        st.metric("🌾 Weeds", weeds1)
+                        st.info(f"⏱️ Time: {time1:.2f}s")
 
-                comparison_df = pd.DataFrame({
-                    "Model": ["YOLOv11", "Hybrid"],
-                    "Crops": [crops1, crops2],
-                    "Weeds": [weeds1, weeds2],
-                    "Detection Time (s)": [time1, time2]
-                })
-                st.dataframe(comparison_df, use_container_width=True)
-                fig = px.bar(comparison_df.melt(id_vars="Model"),
-                             x="Model", y="value", color="variable",
-                             barmode="group", title="📈 Accuracy Comparison")
-                fig.update_layout(paper_bgcolor="rgba(0,0,0,0.4)", plot_bgcolor="rgba(0,0,0,0.4)", font=dict(color="white"))
-                st.plotly_chart(fig, use_container_width=True, key=f"compare_pie_{i}")
-            else:
-                model = model_yolo if model_choice == "YOLOv11" else model_hybrid
-                result_img, crops, weeds, elapsed = run_and_draw(image_bgr, model)
-                result_rgb = cv2.cvtColor(result_img, cv2.COLOR_BGR2RGB)
-                st.image(result_rgb, caption="🧠 Detected Image", use_column_width=True)
-                st.metric("🌿 Crops", crops)
-                st.metric("🌾 Weeds", weeds)
-                st.info(f"⏱️ Detection Time: {elapsed:.2f} seconds")
-                show_pie_chart(crops, weeds, chart_key=f"pie_{i}")
+                    with col2:
+                        result_img2, crops2, weeds2, time2 = run_and_draw(image_bgr, model_hybrid)
+                        st.image(cv2.cvtColor(result_img2, cv2.COLOR_BGR2RGB), caption="Hybrid Model", use_column_width=True)
+                        st.metric("🌿 Crops", crops2)
+                        st.metric("🌾 Weeds", weeds2)
+                        st.info(f"⏱️ Time: {time2:.2f}s")
 
-elif input_type == "Camera":
-    if st.toggle("📸 Enable Camera"):
-        camera_image = st.camera_input("Take a Photo")
-        if camera_image:
-            image = Image.open(camera_image).convert("RGB")
-            image_np = np.array(image)
-            image_bgr = cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
-            st.image(image, caption="📷 Captured Image", use_column_width=True)
+                    comparison_df = pd.DataFrame({
+                        "Model": ["YOLOv11", "Hybrid"],
+                        "Crops": [crops1, crops2],
+                        "Weeds": [weeds1, weeds2],
+                        "Detection Time (s)": [time1, time2]
+                    })
+                    st.dataframe(comparison_df, use_container_width=True)
+                    fig = px.bar(comparison_df.melt(id_vars="Model"),
+                                 x="Model", y="value", color="variable",
+                                 barmode="group", title="📈 Accuracy Comparison")
+                    fig.update_layout(paper_bgcolor="rgba(0,0,0,0.4)", plot_bgcolor="rgba(0,0,0,0.4)", font=dict(color="white"))
+                    st.plotly_chart(fig, use_container_width=True, key=f"compare_pie_{i}")
+                else:
+                    model = model_yolo if model_choice == "YOLOv11" else model_hybrid
+                    result_img, crops, weeds, elapsed = run_and_draw(image_bgr, model)
+                    result_rgb = cv2.cvtColor(result_img, cv2.COLOR_BGR2RGB)
+                    st.image(result_rgb, caption="🧠 Detected Image", use_column_width=True)
+                    st.metric("🌿 Crops", crops)
+                    st.metric("🌾 Weeds", weeds)
+                    st.info(f"⏱️ Detection Time: {elapsed:.2f} seconds")
+                    show_pie_chart(crops, weeds, chart_key=f"pie_{i}")
 
-            if model_choice == "Compare Both":
-                col1, col2 = st.columns(2)
-                with col1:
-                    result_img1, crops1, weeds1, time1 = run_and_draw(image_bgr, model_yolo)
-                    st.image(cv2.cvtColor(result_img1, cv2.COLOR_BGR2RGB), caption="YOLOv11", use_column_width=True)
-                    st.metric("🌿 Crops", crops1)
-                    st.metric("🌾 Weeds", weeds1)
-                    st.info(f"⏱️ Time: {time1:.2f}s")
+    elif input_type == "Camera":
+        if st.toggle("📸 Enable Camera"):
+            camera_image = st.camera_input("Take a Photo")
+            if camera_image:
+                image = Image.open(camera_image).convert("RGB")
+                image_np = np.array(image)
+                image_bgr = cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
+                st.image(image, caption="📷 Captured Image", use_column_width=True)
 
-                with col2:
-                    result_img2, crops2, weeds2, time2 = run_and_draw(image_bgr, model_hybrid)
-                    st.image(cv2.cvtColor(result_img2, cv2.COLOR_BGR2RGB), caption="Hybrid Model", use_column_width=True)
-                    st.metric("🌿 Crops", crops2)
-                    st.metric("🌾 Weeds", weeds2)
-                    st.info(f"⏱️ Time: {time2:.2f}s")
+                if model_choice == "Compare Both":
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        result_img1, crops1, weeds1, time1 = run_and_draw(image_bgr, model_yolo)
+                        st.image(cv2.cvtColor(result_img1, cv2.COLOR_BGR2RGB), caption="YOLOv11", use_column_width=True)
+                        st.metric("🌿 Crops", crops1)
+                        st.metric("🌾 Weeds", weeds1)
+                        st.info(f"⏱️ Time: {time1:.2f}s")
 
-                comparison_df = pd.DataFrame({
-                    "Model": ["YOLOv11", "Hybrid"],
-                    "Crops": [crops1, crops2],
-                    "Weeds": [weeds1, weeds2],
-                    "Detection Time (s)": [time1, time2]
-                })
-                st.dataframe(comparison_df, use_container_width=True)
-                fig = px.bar(comparison_df.melt(id_vars="Model"),
-                             x="Model", y="value", color="variable",
-                             barmode="group", title="📊 Camera Input Comparison")
-                fig.update_layout(paper_bgcolor="rgba(0,0,0,0.4)", plot_bgcolor="rgba(0,0,0,0.4)", font=dict(color="white"))
-                st.plotly_chart(fig, use_container_width=True, key="camera_comparison")
-            else:
-                model = model_yolo if model_choice == "YOLOv11" else model_hybrid
-                result_img, crops, weeds, elapsed = run_and_draw(image_bgr, model)
-                result_rgb = cv2.cvtColor(result_img, cv2.COLOR_BGR2RGB)
-                st.image(result_rgb, caption="🧠 Detected Image", use_column_width=True)
-                st.metric("🌿 Crops", crops)
-                st.metric("🌾 Weeds", weeds)
-                st.info(f"⏱️ Detection Time: {elapsed:.2f} seconds")
-                show_pie_chart(crops, weeds, chart_key="camera_chart")
+                    with col2:
+                        result_img2, crops2, weeds2, time2 = run_and_draw(image_bgr, model_hybrid)
+                        st.image(cv2.cvtColor(result_img2, cv2.COLOR_BGR2RGB), caption="Hybrid Model", use_column_width=True)
+                        st.metric("🌿 Crops", crops2)
+                        st.metric("🌾 Weeds", weeds2)
+                        st.info(f"⏱️ Time: {time2:.2f}s")
 
+                    comparison_df = pd.DataFrame({
+                        "Model": ["YOLOv11", "Hybrid"],
+                        "Crops": [crops1, crops2],
+                        "Weeds": [weeds1, weeds2],
+                        "Detection Time (s)": [time1, time2]
+                    })
+                    st.dataframe(comparison_df, use_container_width=True)
+                    fig = px.bar(comparison_df.melt(id_vars="Model"),
+                                 x="Model", y="value", color="variable",
+                                 barmode="group", title="📊 Camera Input Comparison")
+                    fig.update_layout(paper_bgcolor="rgba(0,0,0,0.4)", plot_bgcolor="rgba(0,0,0,0.4)", font=dict(color="white"))
+                    st.plotly_chart(fig, use_container_width=True, key="camera_comparison")
+                else:
+                    model = model_yolo if model_choice == "YOLOv11" else model_hybrid
+                    result_img, crops, weeds, elapsed = run_and_draw(image_bgr, model)
+                    result_rgb = cv2.cvtColor(result_img, cv2.COLOR_BGR2RGB)
+                    st.image(result_rgb, caption="🧠 Detected Image", use_column_width=True)
+                    st.metric("🌿 Crops", crops)
+                    st.metric("🌾 Weeds", weeds)
+                    st.info(f"⏱️ Detection Time: {elapsed:.2f} seconds")
+                    show_pie_chart(crops, weeds, chart_key="camera_chart")
+
+    st.markdown('</div>', unsafe_allow_html=True)
